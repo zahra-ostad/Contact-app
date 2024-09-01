@@ -1,0 +1,17 @@
+:root{
+    font-family: Inter,system-ui,Avenir,Helvetica,Arial;
+    line-height: 1.5;
+}
+body{
+    width: 100%;
+    min-height: 100vh;
+    padding: 10px;
+    background-color: rgb(236, 236, 251);
+    color: #555;
+}
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
