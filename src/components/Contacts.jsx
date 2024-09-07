@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import inputs from "../constants/inputs"
 import {v4} from "uuid"
 import ContactsList from "./ContactsList"
@@ -6,10 +6,15 @@ import styles from "./Contacts.module.css"
 
 
 
-function Contacts() {
-    const [contacts,setContacts]=useState([])
+function Contacts({contacts,setContacts,error,setError}) {
     const [contact,setContact]=useState({id:"",name:"",email:"",job:"",phone:""})
-    const[error,setError]=useState({name:"",email:"",alert:""})
+    const [success,setSuccess]=useState("")
+    const [edit,setEdit]=useState(false)
+    const [selectedId,setSelectedId]=useState("")
+
+    useEffect(()=>{
+        window.localStorage.setItem("contacts",JSON.stringify(contacts))
+    },[contacts])
 
 
     const validateValue=(name,value)=>{
@@ -31,21 +36,54 @@ const changeHandler=(e)=>{
     const value=e.target.value
     setContact(contact=>({...contact,[name]:value}))
     validateValue(name,value)
+    setSuccess("")
 }
 
 const addHandler=()=>{
     if(!contact.name || !contact.email){
         setError(error=>({...error,alert:"Please enter valid data!"}))
+        setSuccess("")
         return;
     }
-    setError({name:"",email:"",alert:""})
+  
     const newContact={...contact,id:v4()}
     setContacts(contacts=>([...contacts,newContact]))
     setContact({name:"",email:"",job:"",phone:""})
+    setError({name:"",email:"",alert:""})
+    setSuccess("Contact added successfully !")
 }
+useEffect(()=>{
+    if(error.alert || error.name || error.email || success){
+        const timer=setTimeout(() => {
+            setError({name:"",email:"",alert:""})
+            setSuccess("")
+        }, 2000);
+        return ()=>clearTimeout(timer)
+    }
+},[error,success])
+
 const deleteHandler=(id)=>{
     const newContacts=contacts.filter(contact=>contact.id !==id)
     setContacts(newContacts)
+    setError(error=>({...error,alert:"Contact  Deleted successfully!"}))
+}
+
+const editHandler=id=>{
+    const contactItem=contacts.find(contact=>contact.id === id)
+    console.log(contactItem)
+    setContact(contact=>({...contact,name:contactItem.name,email:contactItem.email,job:contactItem.job,phone:contactItem.phone}))
+    setEdit(edit=>!edit)
+    setSelectedId(selectedId=>id)
+}
+
+const applyEditHandler=(e)=>{
+const updatedContacts=contacts.map(item=>item.id === selectedId ? {...item,...contact}:item)
+setContacts(updatedContacts)
+setContact({id:"",name:"",email:"",job:"",phone:""})
+setEdit(edit=>!edit)
+setSelectedId("")
+setError({name:"",email:"",alert:""})
+setSuccess("Contact edited successfully !")
 }
   return (
     <div className={styles.container}>
@@ -53,15 +91,19 @@ const deleteHandler=(id)=>{
      {
      inputs.map((input,index)=>(<input key={index} type={input.type} placeholder={input.placeholder} name={input.name} onChange={changeHandler} value={contact[input.name]}/>))
     }
+    <div className={styles.alert}>
      {error.name&&<p>{error.name}</p>}
     {error.email&&<p>{error.email}</p>}
-     <button onClick={addHandler}>Add Contact</button>
+    </div>
+    {edit?<button className={styles.edit} onClick={applyEditHandler} id={selectedId}>Edit Contact</button> :    <button onClick={addHandler}>Add Contact</button>}
+     </div>
      <div className={styles.alert}>
      {error.alert&&<p>{error.alert}</p>}
+     {success && <p style={{ color: 'green',backgroundColor:"rgb(149, 222, 205)" }}>{success}</p>}
     </div>
-            
-        </div>
-        <ContactsList contacts={contacts} deleteHandler={deleteHandler}/>
+
+    <ContactsList contacts={contacts} deleteHandler={deleteHandler} editHandler={editHandler}/>
+
     </div>
   )
 }
